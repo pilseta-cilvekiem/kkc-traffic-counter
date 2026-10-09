@@ -98,6 +98,19 @@ wait in memory and are retried with backoff; each carries its own `event_id`, so
 batch is not stored twice. The queue is not written to disk: a restart during an outage
 loses what was waiting, and the run summary says how many.
 
+### The public viewer
+
+`viewer/` is a static page that reads `crossings` with the publishable key and shows totals
+per hour, day, week or month for any interval, split by type (bicycles, scooters & riders,
+pedestrians, cars) and direction (`in` is labelled *From center*, `out` *To center*). It also
+downloads the table or the raw events of the interval as CSV. `.github/workflows/pages.yml`
+publishes it to GitHub Pages on every push to `main` that touches it (one-time setup:
+Settings → Pages → Source: GitHub Actions).
+
+PostgREST aggregates are off, so the page fetches the interval's rows in pages of 1000 and
+buckets them in the browser, in Riga time. To try it locally:
+`python -m http.server -d viewer`.
+
 ## The ROI tool, and what the two shapes do
 
 ```bash
@@ -428,9 +441,6 @@ the line in half; `min_straightness` is what removes it.
 
 ## Known limitations
 
-- **~38% of riders are missed.** See the table above. The dominant cause is that the detector
-  simply does not fire on some riders in some windows, so no amount of tracking or threshold
-  work recovers them.
 - **All-traffic ground truth is one daytime hour.** `groundtruth.yaml` labels riders only
   (`calibrate.py`, `validate_log.py`); `vid.csv` covers every class, but for one hour of one
   day (see "All traffic, one full hour"). Night and bad weather are unmeasured for cars and
