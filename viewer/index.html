@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KKC Traffic Counter</title>
+<meta name="description" content="Bicycles, pedestrians and cars counted crossing the line, by direction.">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<header class="top">
+  <h1>Traffic counter</h1>
+  <p class="sub">Crossings counted by the camera, in <span id="tz-label">Riga</span> time.</p>
+</header>
+
+<main>
+  <section class="controls" aria-label="Filters">
+    <div class="field">
+      <label for="preset">Interval</label>
+      <select id="preset">
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="7d">Last 7 days</option>
+        <option value="30d">Last 30 days</option>
+        <option value="this-month">This month</option>
+        <option value="last-month">Last month</option>
+        <option value="90d">Last 90 days</option>
+        <option value="this-year">This year</option>
+        <option value="custom">Custom…</option>
+      </select>
+    </div>
+    <div class="field range">
+      <label for="from">From</label>
+      <input type="date" id="from">
+    </div>
+    <div class="field range">
+      <label for="to">To (incl.)</label>
+      <input type="date" id="to">
+    </div>
+    <div class="field">
+      <label for="bucket">Split by</label>
+      <select id="bucket">
+        <option value="hour">Hour</option>
+        <option value="day">Day</option>
+        <option value="week">Week</option>
+        <option value="month">Month</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="stack">Chart by</label>
+      <select id="stack">
+        <option value="group">Type</option>
+        <option value="direction">Direction</option>
+      </select>
+    </div>
+    <fieldset class="field groups">
+      <legend>Types</legend>
+      <div id="group-toggles"></div>
+    </fieldset>
+    <fieldset class="field dirs">
+      <legend>Direction</legend>
+      <div>
+        <label><input type="checkbox" name="dir" value="in" checked> From center</label>
+        <label><input type="checkbox" name="dir" value="out" checked> To center</label>
+      </div>
+    </fieldset>
+  </section>
+
+  <p id="status" class="status" role="status"></p>
+
+  <section id="cards" class="cards" aria-label="Totals"></section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2 id="chart-title">Crossings</h2>
+    </div>
+    <div class="chart-wrap"><canvas id="chart" aria-label="Crossings over time"></canvas></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Table</h2>
+      <div class="actions">
+        <button id="dl-table" type="button">Download table (CSV)</button>
+        <button id="dl-raw" type="button" class="primary">Download raw events (CSV)</button>
+      </div>
+    </div>
+    <div class="table-wrap"><table id="table"></table></div>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>Data: <a href="https://github.com/pilseta-cilvekiem/kkc-traffic-counter">kkc-traffic-counter</a>.
+  Counts come from an automatic detector and are approximate.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
