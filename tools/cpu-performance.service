@@ -1,0 +1,11 @@
+[Unit]
+Description=Pin CPU frequency governor to performance (kkc_bicycles)
+After=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "for g in /sys/devices/system/cpu/cpufreq/policy*/scaling_governor; do echo performance > $g; done"
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

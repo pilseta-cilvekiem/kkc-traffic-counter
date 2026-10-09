@@ -107,7 +107,15 @@ class VideoSource:
         self.is_live = is_live_source(path) if live is None else bool(live)
         self._delivered = 0
 
-        self.cap = self._open()
+        try:
+            self.cap = self._open()
+        except RuntimeError as exc:
+            # A camera that is not up yet (the board booted first, a power cut took both) is
+            # the same situation as one that dropped: wait for it rather than exit.
+            if not (self.is_live and self.reconnect):
+                raise
+            self._log(f"[warn] {exc}; retrying every {self.reconnect_delay:.0f}s")
+            self.cap = self._retry_open()
         # Set once, not per reconnect: `measured_fps` is a session average, and resetting the
         # clock on every reconnect while keeping the frame count would inflate it.
         self._started_at = time.monotonic()
@@ -165,19 +173,28 @@ class VideoSource:
         if not (self.is_live and self.reconnect):
             return False
         self._log(f"[warn] stream ended or stalled; reconnecting to {self.path}")
+        try:
+            self.cap.release()
+        except Exception:
+            pass
+        self.cap = self._retry_open()
+        return True
+
+    def _retry_open(self) -> cv2.VideoCapture:
+        """Open the live source, retrying until it answers.
+
+        Logs once when it comes back rather than on every attempt: a camera that is off
+        overnight would otherwise put a line in the journal every `reconnect_delay` seconds.
+        """
+        started = time.monotonic()
         while True:
-            try:
-                self.cap.release()
-            except Exception:
-                pass
             time.sleep(self.reconnect_delay)
             try:
-                self.cap = self._open()
-            except RuntimeError as exc:
-                self._log(f"[warn] {exc}; retrying in {self.reconnect_delay:.0f}s")
+                cap = self._open()
+            except RuntimeError:
                 continue
-            self._log("[info] stream reconnected")
-            return True
+            self._log(f"[info] stream connected after {time.monotonic() - started:.0f}s")
+            return cap
 
     def _log(self, message: str) -> None:
         if not self.quiet:

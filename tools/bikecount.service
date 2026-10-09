@@ -1,0 +1,28 @@
+# The counter itself, started with the board. The camera URL comes from .env (CAMERA_URL);
+# the Environment= line below is only the fallback when .env does not set it.
+#
+#   sudo cp tools/bikecount.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now bikecount.service
+#   journalctl -u bikecount -f
+[Unit]
+Description=Street traffic counter (kkc_bicycles)
+After=network-online.target cpu-performance.service
+Wants=network-online.target
+# Never give up restarting; a crash loop is visible in the journal either way.
+StartLimitIntervalSec=0
+
+[Service]
+User=radxa
+WorkingDirectory=/home/radxa/kkc_bicycles
+Environment=CAMERA_URL=rtsp://192.168.88.28:8554/cam
+EnvironmentFile=-/home/radxa/kkc_bicycles/.env
+# Crossings go to Supabase only. --events /dev/null keeps them off stdout, and so out of the
+# journal: nothing per-crossing is written to the SD card.
+ExecStart=/home/radxa/kkc_bicycles/.venv/bin/python detect_bikes.py ${CAMERA_URL} \
+    --events /dev/null --report
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -220,30 +220,24 @@ and infers at 288×960, so extra source resolution costs decode time and buys no
 
 ### Running it as a service
 
-Once a camera is on the cable, the counter should come up with the board:
+`tools/bikecount.service` starts the counter with the board. It reads the stream URL from
+`CAMERA_URL` in `.env` (falling back to the laptop's test rig, `rtsp://192.168.88.28:8554/cam`),
+and sends crossings to Supabase (`--report`) and nowhere else — no events file, nothing
+per-crossing in the journal — to keep writes to the SD card down.
 
-```ini
-# /etc/systemd/system/bikecount.service
-[Unit]
-Description=Bicycle counter
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-User=radxa
-WorkingDirectory=/home/radxa/kkc_bicycles
-ExecStart=/home/radxa/kkc_bicycles/.venv/bin/python detect_bikes.py \
-    rtsp://user:pass@192.168.1.3:554/Streaming/Channels/101 \
-    --events /var/log/bikecount/events.jsonl --quiet
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
+```bash
+sudo cp tools/bikecount.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now bikecount.service
+journalctl -u bikecount -f
 ```
 
-`Restart=always` is a backstop, not the reconnect mechanism — the source reconnects on its
-own, and a service restart should be rare enough to be worth investigating.
+To move to the real camera, change `CAMERA_URL` in `.env` and
+`sudo systemctl restart bikecount`.
+
+A camera that is not up yet, or drops later, is waited for by the source itself — it retries
+every `reconnect_delay` and logs once when the stream comes back. `Restart=always` is a
+backstop for crashes, not the reconnect mechanism, and a service restart should be rare
+enough to be worth investigating.
 
 ## When it does not work
 

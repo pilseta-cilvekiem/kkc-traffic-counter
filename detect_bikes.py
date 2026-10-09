@@ -282,7 +282,8 @@ def main(argv: list[str] | None = None) -> int:
                     if not show_frames(renderer.push(result, frame.image)):
                         break
 
-                if not args.quiet and processed % 50 == 0:
+                # Only on a terminal: under systemd every redraw would be a journal line.
+                if not args.quiet and processed % 50 == 0 and sys.stderr.isatty():
                     elapsed = time.perf_counter() - started
                     print(
                         f"\r[{_hms(frame.timestamp)}] frames={processed} "

@@ -271,11 +271,15 @@ A camera is not a file, and four things change accordingly:
   The counting gate is an 80 px/s speed threshold, so a `dt` taken from `stride / fps` when
   frames are being dropped would quietly change what counts.
 * **A dropped stream reconnects** rather than ending the run — a camera reboot or a pulled
-  cable is an event to ride out, not the end of the input. `--no-reconnect` to opt out.
+  cable is an event to ride out, not the end of the input. A camera that is not answering
+  yet at startup is waited for the same way. `--no-reconnect` to opt out.
 
 `--start` is ignored (there is no past to seek to) and `--duration` is wall-clock seconds.
 The progress line gains `fps in`, the rate the camera actually delivered: if `fps proc` sits
 well below it, the board is behind and `--stride` should go up.
+
+On the board it runs as a systemd service, `tools/bikecount.service`, with the camera URL
+set as `CAMERA_URL` in `.env` — see NETWORK.md, "Running it as a service".
 
 **Testing it without a camera.** `stream_test_video.py` loops one of the recordings out as a
 real stream, so the whole path — RTSP, dropped frames, reconnects — is exercised on the

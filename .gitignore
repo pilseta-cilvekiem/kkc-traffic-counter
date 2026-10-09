@@ -10,7 +10,8 @@ test-videos/
 
 # The RTSP test rig fetches mediamtx (a 55MB static binary) into here on first use, and
 # writes its generated config and log beside it. All regenerable.
-tools/
+tools/*
+!tools/*.service
 # mediamtx writes a self-signed pair into its working directory on startup
 auto.crt
 auto.key
