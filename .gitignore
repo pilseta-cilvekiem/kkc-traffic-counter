@@ -1,0 +1,25 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.mp4
+# ACUITY build directories: regenerable from export_npu.py, and large. The .nb you actually
+# deploy is copied into models/ and tracked; these hold the intermediates.
+npu_build/
+build_*/
+test-videos/
+
+# The RTSP test rig fetches mediamtx (a 55MB static binary) into here on first use, and
+# writes its generated config and log beside it. All regenerable.
+tools/
+# mediamtx writes a self-signed pair into its working directory on startup
+auto.crt
+auto.key
+
+# Supabase credentials — see .env.example
+.env
+
+# Model artifacts: only the deployed .nb under models/ is tracked. Sources and exports are
+# regenerable (see README "Weights kept in the repo").
+*.pt
+*.onnx
+*_openvino_model/

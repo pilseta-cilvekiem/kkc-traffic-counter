@@ -1,0 +1,98 @@
+roi:
+  polygon:
+  - - 0.05391
+    - 0.79167
+  - - 0.04609
+    - 0.32083
+  - - 0.37344
+    - 0.1625
+  - - 0.99453
+    - 0.17917
+  - - 0.99687
+    - 0.99167
+  - - 0.21641
+    - 0.99306
+  line:
+  - - 0.22344
+    - 0.95694
+  - - 0.50156
+    - 0.23611
+  crop: true
+  mask_outside: false
+  crop_padding: 16
+  # Pavements, where nothing is a car or a motorcycle: a walker near the camera read as `car`
+  # is a person, a cyclist read as `motorcycle` a bicycle. Tested at each box's centre, so
+  # each reaches above its pavement: the far one into the building fronts, the near one up to
+  # the yellow no-parking line on the left, then down under the cars that drive through that
+  # box. Fitted to 9 min of board detections: 1 of 33470 confident car boxes falls inside.
+  # Edit with `roi_tool.py` (Z), check in the debug video.
+  zones:
+  - name: far pavement
+    polygon: [[0.0000, 0.2083], [1.0000, 0.2083], [1.0000, 0.5528], [0.7812, 0.5319], [0.5000, 0.5083], [0.1875, 0.4861], [0.0000, 0.4667]]
+    relabel: {2: 0, 3: 1, 5: 0, 7: 0}   # car/bus/truck -> person, motorcycle -> bicycle
+    keep_vehicle_height: 0.2083         # 150 px: a van in the far lane, not a walker
+  - name: near pavement
+    polygon: [[0.0000, 0.7778], [0.1172, 0.7389], [0.2578, 0.7722], [0.2734, 0.7972], [0.3750, 0.8222], [0.4844, 0.8500], [0.7031, 0.9056], [0.8594, 0.9750], [0.8672, 1.0000], [0.0000, 1.0000]]
+    relabel: {2: 0, 3: 1, 5: 0, 7: 0}
+model:
+  weights: models/yolo11s_6_uint8_a733_480x960.nb   # 15/22 riders vs 10 for yolo11n; see NPU.md
+  imgsz: 640
+  conf: 0.2
+  iou: 0.5
+  # Everything that moves along the street: person, bicycle, car, motorcycle, bus, truck.
+  # E-scooters have no COCO class; they are counted as `rider(person)`, a fast person.
+  classes: [0, 1, 2, 3, 5, 7]
+  device: null
+  half: false
+  backend: auto
+  precision: f16
+  cpu_affinity: auto
+  num_threads: 0
+  npu_libs: npu_lib
+  npu_decoder: auto
+  # Merged so a label that flickers stays one track, and counted under the merged class.
+  # Each event also carries `raw_class`, the label the track saw most: motorcycle, bus, truck.
+  merge_classes:
+    3: 1   # motorcycle -> bicycle (a cyclist at night reads as either)
+    5: 2   # bus -> car
+    7: 2   # truck -> car
+  # After merging: person (pedestrian / rider(person)), two-wheeler, motor vehicle.
+  count_classes: [0, 1, 2]
+track:
+  track_activation_threshold: 0.25
+  lost_track_buffer: 30
+  minimum_matching_threshold: 0.8
+  max_match_speed_px_s: 400.0
+  min_hits_to_count: 2
+  cross_class_iou: 0.3           # a relabelled object (walker read as car) keeps its track
+  dedup_seconds: 2.0
+  dedup_px: 150.0
+  reverse_dedup_seconds: 1.0   # a crossing that reverses this fast is jitter, not a rider
+  vehicle_dedup_seconds: 0.4   # two boxes on one car cross together; a following car does not
+  track_cooldown_seconds: 1.0  # one track, one count, per second
+  resolve_delay_frames: 6
+  person_resolve_delay_frames: 12  # let a rider's bicycle be judged before its person box
+motion:
+  min_speed_px_s: 40.0   # was 80; flat px/s ignores perspective, and the ROI now spans the street, far lane included
+  promote_fast_person: true
+  min_speed_samples: 3
+  min_straightness: 0.5          # net/path travelled; flickering boxes score ~0.05
+  min_rider_heights_per_s: 1.5   # riding, not walking: dog walker 1.19, slowest rider 1.85
+  min_bike_heights_per_s: 1.1    # a bicycle box: riders near the camera 1.0-1.5, pushed ~0.8
+  bike_companion_frames: 2       # a fast person with a bicycle track beside it is a cyclist
+  rider_classes: [1]             # count only when ridden; a pushed bike is a pedestrian's
+  min_moving_heights_per_s: 0.3  # everything else just has to be moving
+  window_seconds: 3.0            # judge motion around the crossing, not over the whole life
+  hold_seconds: 120.0            # a car stopped on the line may still drive on and count; queues last 75 s+
+runtime:
+  stride: 1
+  start: 0.0
+  duration: null
+  prefetch: 2
+  # Live sources (rtsp:// http:// /dev/videoN). See NETWORK.md.
+  live: auto            # auto | true | false — force it if the URL serves a finite file
+  rtsp_transport: tcp   # udp drops packets on a long link, and a torn frame reads as a miss
+  reconnect: true
+  reconnect_delay: 2.0
+  stream_fps: 15.0      # assumed when the camera advertises no usable rate
+  adaptive_dt: true     # measure the frame interval instead of assuming stride/fps

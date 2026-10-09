@@ -1,0 +1,12 @@
+# --- runtime: what the counter actually needs on the board ---------------------
+openvino>=2024.0          # inference runtime (Apache-2.0); the ARM CPU plugin is built in
+supervision>=0.26,<0.31   # LineZone counting + annotators (MIT)
+opencv-python>=4.9        # video IO, letterboxing, NMS, drawing
+numpy>=1.24
+PyYAML>=6.0               # config
+
+# --- export/calibration only: NOT needed on the board -------------------------
+# These pull in torch (~1GB). Install them on a workstation, run export_openvino.py
+# there, and copy the resulting `*_openvino_model/` directory to the board.
+#   pip install ultralytics
+# ultralytics>=8.3        # YOLO11 weights + the OpenVINO exporter (AGPL-3.0)

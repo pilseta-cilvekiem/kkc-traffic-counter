@@ -1,0 +1,39 @@
+# Hand-labelled windows, verified by eye. This is the only real accuracy measure we have —
+# add every clip you check, and re-run calibrate.py after any tuning change.
+#
+# `start`/`end` are seconds of video time (mm:ss from the start of the file, not the burnt-in
+# clock). `expect` is the number of distinct riders that pass through.
+
+videos:
+  # Night, 02:02-03:09. Quiet: a handful of riders, almost no other traffic.
+  - file: "210235UBDP324C000008c47905dd28#1$_S20260725020200_E20260725030949.mp4"
+    windows:
+      # Expect 0 by design: only people *riding* count. These two are walking their bikes,
+      # so the speed gate should reject them — this window guards against that regressing.
+      - {start: 160, end: 175, label: "2 pushing bikes (expect 0)", expect: 0}
+      - {start: 755, end: 765, label: "cyclist riding", expect: 1}
+      - {start: 1020, end: 1027, label: "person on a scooter", expect: 1}
+      - {start: 1076, end: 1084, label: "cyclist", expect: 1}
+      - {start: 2287, end: 2295, label: "scooters", expect: 2}
+      - {start: 3516, end: 3523, label: "cyclist", expect: 1}
+
+  # Daytime, 13:41-14:34. Busy: heavy pedestrian and car traffic, real mopeds present.
+  - file: "210235UBDP324C000008c47905dd28#1$_S20260725134146_E20260725143459.mp4"
+    windows:
+      - {start: 82, end: 87, label: "scooter", expect: 1}
+      - {start: 113, end: 125, label: "3x cyclist", expect: 3}
+      # Found by the detector before it was labelled: `validate_log.py` scored it a false
+      # positive, and the frames showed a real rider. Confirmed by eye at 12:44:02 on the
+      # burnt-in clock — the camera clock runs at 0.6x this file's timestamps, so the two
+      # clocks do not agree and only the position in the file is usable here.
+      - {start: 225, end: 231, label: "cyclist", expect: 1}
+      - {start: 368, end: 372, label: "cyclist", expect: 1}
+      # Expect 0: a person walking a dog, no bike involved. It cleared the 80 px/s gate at
+      # 107 px/s and was counted on the live stream — walking pace in pixels is a function of
+      # where in the frame you are, which is why the rider gate is in box-heights per second.
+      - {start: 150, end: 165, label: "pedestrian walking a dog (expect 0)", expect: 0}
+      - {start: 1098, end: 1105, label: "cyclist", expect: 1}
+      - {start: 1167, end: 1173, label: "scooter and cyclist", expect: 2}
+      - {start: 1636, end: 1651, label: "3x cyclist", expect: 3}
+      - {start: 1860, end: 1878, label: "3x cyclist", expect: 3}
+      - {start: 2069, end: 2074, label: "cyclist", expect: 1}
